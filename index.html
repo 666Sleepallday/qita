@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>朱清磊 - 个人可视化简历</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+<style>
+  :root {
+    /* ---- dataviz reference palette: light ---- */
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f1f2f5;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    /* categorical slots */
+    --series-1:       #2a78d6;
+    --series-2:       #1baf7a;
+    --series-3:       #eda100;
+    --series-4:       #008300;
+    --series-5:       #4a3aa7;
+    --series-6:       #e34948;
+    --series-7:       #e87ba4;
+    --series-8:       #eb6834;
+    /* hero gradient */
+    --hero-from:      #0f1f3a;
+    --hero-mid:       #152244;
+    --hero-to:        #1b2d52;
+    /* card */
+    --card-bg:        #ffffff;
+    --card-shadow:    0 2px 16px rgba(0,0,0,0.07);
+    --card-radius:    14px;
+    --border-subtle:  rgba(11,11,11,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1:      #1a1a19;
+      --page-plane:     #111110;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --series-1:       #3987e5;
+      --series-2:       #199e70;
+      --series-3:       #c98500;
+      --series-5:       #9085e9;
+      --card-bg:        #1e1e1d;
+      --card-shadow:    0 2px 16px rgba(0,0,0,0.25);
+      --border-subtle:  rgba(255,255,255,0.08);
+      --hero-from:      #080f1f;
+      --hero-mid:       #0c1628;
+      --hero-to:        #101d36;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 16px; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(160deg, var(--hero-from) 0%, var(--hero-mid) 45%, var(--hero-to) 100%);
+    color: #fff;
+    padding: 56px 40px 64px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: -60% -30%;
+    background:
+      radial-gradient(circle at 25% 35%, rgba(42,120,214,0.14) 0%, transparent 50%),
+      radial-gradient(circle at 72% 55%, rgba(74,58,167,0.10) 0%, transparent 50%),
+      radial-gradient(circle at 48% 70%, rgba(27,175,122,0.08) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+  .hero-avatar {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.25);
+    background: linear-gradient(135deg, var(--series-1), var(--series-5));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 44px; color: #fff;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  }
+  .hero h1 { font-size: 2.5em; font-weight: 700; letter-spacing: 3px; margin: 16px 0 4px; }
+  .hero .subtitle { font-size: 1.05em; opacity: 0.82; font-weight: 300; letter-spacing: 1px; margin-bottom: 14px; }
+  .hero-contact {
+    display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;
+    margin-top: 14px; font-size: 0.9em; opacity: 0.78;
+  }
+  .hero-contact span { display: flex; align-items: center; gap: 5px; }
+  .hero-tags {
+    display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; margin-top: 18px;
+  }
+  .hero-tag {
+    padding: 5px 16px; border-radius: 20px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    font-size: 0.85em;
+    backdrop-filter: blur(4px);
+    transition: background 0.25s, transform 0.25s;
+  }
+  .hero-tag:hover { background: rgba(255,255,255,0.20); transform: translateY(-2px); }
+
+  /* ===== CONTAINER ===== */
+  .container { max-width: 1180px; margin: 0 auto; padding: 32px 24px 50px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .grid-full { grid-column: 1 / -1; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    padding: 26px 28px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-subtle);
+    transition: box-shadow 0.25s;
+  }
+  .card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.10); }
+  .card-h3 {
+    font-size: 1.05em; font-weight: 700; margin-bottom: 16px;
+    padding-bottom: 11px;
+    border-bottom: 3px solid var(--series-1);
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-primary);
+  }
+  .card-h3 .icon { font-size: 1.35em; }
+  .chart-box { width: 100%; height: 370px; }
+  .chart-box-sm { width: 100%; height: 310px; }
+
+  /* ===== SKILL BARS ===== */
+  .skill-row { margin-bottom: 13px; }
+  .skill-label { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 0.88em; font-weight: 500; }
+  .skill-bar-bg { height: 9px; background: var(--gridline); border-radius: 5px; overflow: hidden; }
+  .skill-bar-fill {
+    height: 100%; border-radius: 5px;
+    transition: width 1.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .s-1 { background: linear-gradient(90deg, var(--series-1), #6aa8f0); }
+  .s-2 { background: linear-gradient(90deg, var(--series-2), #45d09e); }
+  .s-5 { background: linear-gradient(90deg, var(--series-5), #8b7fcf); }
+  .s-3 { background: linear-gradient(90deg, var(--series-3), #f5c44a); }
+  .s-8 { background: linear-gradient(90deg, var(--series-8), #f08c5c); }
+
+  /* ===== TIMELINE ===== */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--series-1), var(--series-5), var(--series-2));
+    border-radius: 1px;
+  }
+  .tl-item { position: relative; margin-bottom: 22px; }
+  .tl-item::before {
+    content: ''; position: absolute; left: -23px; top: 5px;
+    width: 11px; height: 11px;
+    background: var(--series-1); border-radius: 50%;
+    border: 2px solid var(--card-bg);
+    box-shadow: 0 0 0 3px var(--series-1);
+  }
+  .tl-item.intern::before { background: var(--series-8); box-shadow: 0 0 0 3px var(--series-8); }
+  .tl-date { font-size: 0.82em; color: var(--series-1); font-weight: 600; }
+  .tl-title { font-weight: 700; font-size: 1.02em; margin: 1px 0 4px; }
+  .tl-desc { font-size: 0.88em; color: var(--text-secondary); line-height: 1.75; }
+  .tl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+  .tl-tag {
+    font-size: 0.76em; padding: 3px 10px;
+    background: rgba(42,120,214,0.08); color: var(--series-1);
+    border-radius: 10px; font-weight: 500;
+  }
+
+  /* ===== EVAL ===== */
+  .eval-block {
+    background: rgba(27,175,122,0.06);
+    border-radius: 10px; padding: 18px 20px;
+    line-height: 1.9; font-size: 0.92em;
+    color: var(--text-secondary);
+  }
+  .eval-block strong { color: var(--text-primary); }
+
+  /* ===== POSTER ===== */
+  .poster-section {
+    text-align: center; padding: 40px 30px;
+    background: linear-gradient(150deg, var(--hero-from), var(--hero-mid));
+    color: #fff;
+    border-radius: var(--card-radius);
+    margin-top: 4px;
+  }
+  .poster-section .card-h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.25); justify-content: center; }
+  .qr-box {
+    display: inline-block;
+    background: #fff; padding: 14px; border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+    margin: 18px auto 10px;
+  }
+  .poster-hint { font-size: 0.82em; opacity: 0.65; margin-top: 10px; }
+
+  /* ===== FOOTER ===== */
+  .footer { text-align: center; padding: 26px 20px; color: var(--text-muted); font-size: 0.8em; }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: #fff; }
+    .hero { padding: 28px 20px 36px; }
+    .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-avatar">朱</div>
+    <h1>朱 清 磊</h1>
+    <p class="subtitle">计算机科学与技术 · 初级程序员 · 产品助理 · 杭州</p>
+    <div class="hero-contact">
+      <span>📞 15558081659</span>
+      <span>📧 2061497419@qq.com</span>
+      <span>🎂 2004.11</span>
+      <span>📍 杭州市</span>
+    </div>
+    <div class="hero-tags">
+      <span class="hero-tag">📊 市场调研</span>
+      <span class="hero-tag">📝 产品规划</span>
+      <span class="hero-tag">🎨 用户体验设计</span>
+      <span class="hero-tag">📈 数据分析</span>
+      <span class="hero-tag">💬 沟通协调</span>
+      <span class="hero-tag">📱 新媒体运营</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MAIN ===== -->
+<div class="container">
+
+  <!-- Row 1: Radar + Skills -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-h3"><span class="icon">🎯</span> 综合能力雷达图</div>
+      <div class="chart-box" id="radarChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-h3"><span class="icon">📊</span> 专业技能熟练度</div>
+      <div style="padding-top: 8px;">
+        <div class="skill-row">
+          <div class="skill-label"><span>新媒体运营 / 内容策划</span><span>85%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-1" style="width:85%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>市场调研 / 用户需求分析</span><span>80%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-2" style="width:80%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>PRD 产品需求文档撰写</span><span>78%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-5" style="width:78%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Excel / SQL 数据处理</span><span>75%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-3" style="width:75%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Axure 原型交互设计</span><span>68%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-8" style="width:68%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>产品生命周期管理</span><span>72%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-1" style="width:72%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Python 编程基础</span><span>55%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-5" style="width:55%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>跨团队项目协调</span><span>82%</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill s-2" style="width:82%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Timeline (Education + Internship) -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-h3"><span class="icon">🎓</span> 教育背景</div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-date">2023.09 - 2027.06</div>
+          <div class="tl-title">计算机科学与技术 · 本科</div>
+          <div class="tl-desc">
+            主修课程涵盖计算机科学核心体系，具备扎实的编程基础与逻辑思维能力。
+            在校期间积极参与新媒体运营与学生工作，担任文体委员与寝室长，
+            培养出色的沟通协调与组织管理能力。
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">数据结构</span>
+            <span class="tl-tag">数据库原理</span>
+            <span class="tl-tag">操作系统</span>
+            <span class="tl-tag">计算机网络</span>
+            <span class="tl-tag">Python程序设计</span>
+            <span class="tl-tag">软件工程</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h3"><span class="icon">💼</span> 实习与校园经历</div>
+      <div class="timeline">
+        <div class="tl-item intern">
+          <div class="tl-date">2025.07 - 2025.08</div>
+          <div class="tl-title">当当科技有限公司 · 产品助理</div>
+          <div class="tl-desc">
+            · 协助产品经理开展市场调研与用户需求分析，撰写功能需求文档<br>
+            · 协调设计、开发及测试团队，推动多个功能模块按时上线<br>
+            · 使用数据分析工具对产品数据持续监控，关键指标活跃度与留存率提升 <strong>15%</strong><br>
+            · 收集用户反馈并定位核心痛点，用户整体满意度提升 <strong>20%</strong>
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">产品管理</span>
+            <span class="tl-tag">PRD文档</span>
+            <span class="tl-tag">跨团队协作</span>
+            <span class="tl-tag">数据分析</span>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2023.09 - 2026.06</div>
+          <div class="tl-title">文体委员 / 寝室长 / 校园新媒体运营</div>
+          <div class="tl-desc">
+            · 负责学院公众号日常运营，稳定周更，账号关注人数增长 <strong>30%</strong><br>
+            · 通过用户调研与数据采集优化内容策略，阅读量提升 <strong>120%</strong>，互动量提升 <strong>150%</strong><br>
+            · 牵头策划新生入学、校园文化等多场宣传活动，爆款推文单篇阅读 <strong>5000+</strong>
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">新媒体运营</span>
+            <span class="tl-tag">活动策划</span>
+            <span class="tl-tag">用户调研</span>
+            <span class="tl-tag">内容策略</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Achievement Chart + Knowledge Doughnut -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-h3"><span class="icon">🚀</span> 关键成果量化看板</div>
+      <div class="chart-box" id="achievementChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-h3"><span class="icon">🧩</span> 能力结构分布</div>
+      <div class="chart-box" id="knowledgeChart"></div>
+    </div>
+  </div>
+
+  <!-- Row 4: Word Cloud + Self Eval -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-h3"><span class="icon">☁️</span> 技能关键词云</div>
+      <div class="chart-box-sm" id="wordcloudChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-h3"><span class="icon">✨</span> 自我评价</div>
+      <div class="eval-block">
+        <p>🎯 计算机科学与技术专业背景，具备<strong>扎实的市场调研与用户需求分析能力</strong>，可独立输出初级产品需求文档（PRD）。</p>
+        <p>📊 熟练运用<strong>Excel、SQL</strong>完成数据处理与分析，擅长通过数据洞察优化产品体验与内容策略。</p>
+        <p>📱 校园新媒体运营期间实现<strong>阅读量提升120%、互动量提升150%</strong>，具备优秀的数据复盘与内容优化思维。</p>
+        <p>🤝 多次参与线下活动全流程策划落地，拥有良好的<strong>跨团队沟通协调与项目推进管理能力</strong>。</p>
+        <p style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+          <strong>求职意向：</strong>初级程序员 / 产品助理 / 新媒体运营 · 杭州 · 薪资面议
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 5: Poster -->
+  <div class="poster-section grid-full">
+    <div class="card-h3" style="border-bottom:2px solid rgba(255,255,255,0.25); padding-bottom:10px; margin-bottom:18px;">
+      📱 个人二维码海报
+    </div>
+    <p style="margin-bottom:6px; opacity:0.85;">扫描二维码联系我</p>
+    <div class="qr-box" id="posterQr"></div>
+    <p class="poster-hint">朱清磊 · 计算机科学与技术 · 初级程序员 / 产品助理</p>
+  </div>
+
+</div>
+
+<div class="footer">
+  © 2025 朱清磊 · 个人可视化简历
+</div>
+
+<!-- ===== CHARTS ===== -->
+<script>
+(function() {
+  /* ---- Palette from reference (light mode defaults) ---- */
+  const C = {
+    blue:    '#2a78d6',
+    aqua:    '#1baf7a',
+    yellow:  '#eda100',
+    green:   '#008300',
+    violet:  '#4a3aa7',
+    red:     '#e34948',
+    magenta: '#e87ba4',
+    orange:  '#eb6834',
+  };
+
+  const blueRamp = ['#cde2fb','#86b6ef','#5598e7','#2a78d6','#1c5cab','#104281'];
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  // ==================== 1. RADAR — 综合能力 ====================
+  (function() {
+    var c = echarts.init(document.getElementById('radarChart'));
+    c.setOption({
+      tooltip: { trigger: 'item' },
+      legend: {
+        bottom: 0,
+        textStyle: { color: isDark ? '#c3c2b7' : '#52514e', fontSize: 12 }
+      },
+      radar: {
+        center: ['50%', '45%'],
+        radius: '70%',
+        indicator: [
+          { name: '市场调研', max: 100 },
+          { name: '产品规划', max: 100 },
+          { name: '交互设计', max: 100 },
+          { name: '数据分析', max: 100 },
+          { name: '项目管理', max: 100 },
+          { name: '沟通表达', max: 100 }
+        ],
+        axisName: { color: isDark ? '#c3c2b7' : '#52514e', fontSize: 11 }
+      },
+      series: [{
+        type: 'radar',
+        name: '能力水平',
+        data: [{ value: [80, 78, 70, 75, 72, 85], name: '当前水平' }],
+        areaStyle: { color: 'rgba(42,120,214,0.20)' },
+        lineStyle: { color: C.blue, width: 2 },
+        itemStyle: { color: C.blue, borderColor: '#fff', borderWidth: 2 },
+        symbol: 'circle',
+        symbolSize: 7
+      }]
+    });
+    window.addEventListener('resize', function() { c.resize(); });
+  })();
+
+  // ==================== 2. ACHIEVEMENT BAR CHART ====================
+  (function() {
+    var c = echarts.init(document.getElementById('achievementChart'));
+    c.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' }
+      },
+      grid: { left: '3%', right: '4%', bottom: '12%', top: '6%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: ['活跃度\n提升', '满意度\n提升', '关注人数\n增长', '阅读量\n提升', '互动量\n提升'],
+        axisLabel: { fontSize: 10, color: isDark ? '#c3c2b7' : '#52514e' },
+        axisTick: { alignWithLabel: true }
+      },
+      yAxis: {
+        type: 'value',
+        name: '提升幅度 (%)',
+        nameTextStyle: { fontSize: 10, color: isDark ? '#898781' : '#898781' },
+        axisLabel: { fontSize: 10, color: isDark ? '#898781' : '#898781' },
+        splitLine: { lineStyle: { type: 'dashed', color: isDark ? '#2c2c2a' : '#e1e0d9' } }
+      },
+      series: [{
+        type: 'bar',
+        data: [15, 20, 30, 120, 150],
+        barWidth: '45%',
+        itemStyle: {
+          borderRadius: [5,5,0,0],
+          color: new echarts.graphic.LinearGradient(0,0,0,1,[
+            {offset:0, color: isDark ? '#3987e5' : C.blue},
+            {offset:1, color: isDark ? '#184f95' : blueRamp[1]}
+          ])
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}%',
+          fontSize: 10,
+          color: isDark ? '#c3c2b7' : '#52514e',
+          fontWeight: 600
+        }
+      }]
+    });
+    window.addEventListener('resize', function() { c.resize(); });
+  })();
+
+  // ==================== 3. KNOWLEDGE DOUGHNUT ====================
+  (function() {
+    var c = echarts.init(document.getElementById('knowledgeChart'));
+    c.setOption({
+      tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+      series: [{
+        type: 'pie',
+        radius: ['52%', '78%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: '{b}\n{d}%',
+          fontSize: 10,
+          color: isDark ? '#c3c2b7' : '#52514e'
+        },
+        emphasis: {
+          label: { fontSize: 14, fontWeight: 'bold' },
+          scaleSize: 10
+        },
+        data: [
+          { value: 30, name: '产品管理' },
+          { value: 25, name: '数据分析' },
+          { value: 20, name: '用户体验' },
+          { value: 15, name: '开发基础' },
+          { value: 10, name: '运营策划' }
+        ],
+        color: [C.blue, C.aqua, C.violet, C.yellow, C.orange]
+      }]
+    });
+    window.addEventListener('resize', function() { c.resize(); });
+  })();
+
+  // ==================== 4. WORD CLOUD ====================
+  (function() {
+    var c = echarts.init(document.getElementById('wordcloudChart'));
+    var keywords = [
+      { name: '市场调研', value: 100 },
+      { name: '产品规划', value: 95 },
+      { name: '数据分析', value: 88 },
+      { name: '新媒体运营', value: 92 },
+      { name: 'PRD文档', value: 85 },
+      { name: '用户需求', value: 90 },
+      { name: 'Excel', value: 78 },
+      { name: 'SQL', value: 72 },
+      { name: 'Axure', value: 65 },
+      { name: '用户体验', value: 82 },
+      { name: '项目管理', value: 75 },
+      { name: '活动策划', value: 80 },
+      { name: '沟通协调', value: 88 },
+      { name: '产品生命周期', value: 70 },
+      { name: '内容策略', value: 76 },
+      { name: '用户画像', value: 68 },
+      { name: '交互设计', value: 62 },
+      { name: 'Python', value: 50 },
+      { name: '数据可视化', value: 55 },
+      { name: '需求分析', value: 84 },
+      { name: '团队协作', value: 80 },
+      { name: '竞品分析', value: 66 },
+      { name: '用户调研', value: 82 },
+      { name: '数据复盘', value: 72 },
+      { name: '微信公众号', value: 74 }
+    ];
+    c.setOption({
+      tooltip: { show: true },
+      series: [{
+        type: 'wordCloud',
+        shape: 'circle',
+        left: 'center',
+        top: 'center',
+        width: '90%',
+        height: '90%',
+        rotationRange: [-50, 50],
+        rotationStep: 15,
+        gridSize: 7,
+        sizeRange: [13, 46],
+        textStyle: {
+          fontFamily: 'PingFang SC, Microsoft YaHei, system-ui, sans-serif',
+          fontWeight: 'bold',
+          color: function() {
+            var cs = [C.blue, C.violet, C.aqua, C.yellow, C.orange, C.red, C.green, C.magenta];
+            return cs[Math.floor(Math.random() * cs.length)];
+          }
+        },
+        emphasis: {
+          textStyle: { fontSize: 46 }
+        },
+        data: keywords
+      }]
+    });
+    window.addEventListener('resize', function() { c.resize(); });
+  })();
+
+  // ==================== 5. QR CODE (static text fallback) ====================
+  (function() {
+    var box = document.getElementById('posterQr');
+    // Render a styled placeholder — QR code generation requires an image
+    var canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    var ctx = canvas.getContext('2d');
+    // Solid white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 200, 200);
+    // Draw decorative border
+    ctx.strokeStyle = C.blue;
+    ctx.lineWidth = 3;
+    ctx.roundRect(10, 10, 180, 180, 8);
+    ctx.stroke();
+    // Center icon
+    ctx.fillStyle = C.blue;
+    ctx.font = 'bold 28px system-ui, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('扫码联系', 100, 75);
+    ctx.font = '22px system-ui, "PingFang SC", sans-serif';
+    ctx.fillText('朱清磊', 100, 115);
+    ctx.font = '13px system-ui, "PingFang SC", sans-serif';
+    ctx.fillStyle = '#898781';
+    ctx.fillText('15558081659', 100, 145);
+    box.appendChild(canvas);
+  })();
+
+  // ==================== RESPONSIVE ====================
+  window.addEventListener('resize', function() {
+    // ECharts instances auto-resize via their individual listeners
+  });
+})();
+</script>
+
+</body>
+</html>
