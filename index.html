@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
 <style>
-  
   :root {
     /* ---- dataviz reference palette: light ---- */
     --surface-1:      #fcfcfb;
@@ -210,6 +209,12 @@
     box-shadow: 0 8px 28px rgba(0,0,0,0.3);
     margin: 18px auto 10px;
   }
+  /* 二维码图片适配样式 */
+  .qr-box img {
+    width: 220px;
+    height: auto;
+    display: block;
+  }
   .poster-hint { font-size: 0.82em; opacity: 0.65; margin-top: 10px; }
 
   /* ===== FOOTER ===== */
@@ -397,7 +402,10 @@
       📱 个人二维码海报
     </div>
     <p style="margin-bottom:6px; opacity:0.85;">扫描二维码联系我</p>
-    <div class="qr-box" id="posterQr"></div>
+    <div class="qr-box" id="posterQr">
+      <!-- 二维码图片，替换为你的图片路径 -->
+      <img src="qrcode.png" alt="联系二维码">
+    </div>
     <p class="poster-hint">朱清磊 · 计算机科学与技术 · 初级程序员 / 产品助理</p>
   </div>
 
@@ -600,36 +608,6 @@
       }]
     });
     window.addEventListener('resize', function() { c.resize(); });
-  })();
-
-  // ==================== 5. QR CODE (static text fallback) ====================
-  (function() {
-    var box = document.getElementById('posterQr');
-    // Render a styled placeholder — QR code generation requires an image
-    var canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
-    var ctx = canvas.getContext('2d');
-    // Solid white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 200, 200);
-    // Draw decorative border
-    ctx.strokeStyle = C.blue;
-    ctx.lineWidth = 3;
-    ctx.roundRect(10, 10, 180, 180, 8);
-    ctx.stroke();
-    // Center icon
-    ctx.fillStyle = C.blue;
-    ctx.font = 'bold 28px system-ui, "PingFang SC", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('扫码联系', 100, 75);
-    ctx.font = '22px system-ui, "PingFang SC", sans-serif';
-    ctx.fillText('朱清磊', 100, 115);
-    ctx.font = '13px system-ui, "PingFang SC", sans-serif';
-    ctx.fillStyle = '#898781';
-    ctx.fillText('15558081659', 100, 145);
-    box.appendChild(canvas);
   })();
 
   // ==================== RESPONSIVE ====================
